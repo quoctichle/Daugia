@@ -1,47 +1,43 @@
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
+import { writeFile, mkdir } from 'fs/promises';
+import { join, extname } from 'path';
+import { readMultipartFormData } from 'h3';
 
 export default defineEventHandler(async (event) => {
-  console.log('Upload API called')
   try {
-    const body = await readBody(event)
-    const { image } = body
+    const multipart = await readMultipartFormData(event);
+    
+    const image = multipart?.find(el => el.name === 'image');
 
-    if (!image || !image.startsWith('data:image/')) {
-      console.log('No base64 image')
+    if (!image || !image.data || !image.filename) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'No image provided'
-      })
+        statusMessage: 'No image file provided or file is invalid.',
+      });
     }
 
-    console.log('Base64 received')
-
-    // Extract base64 data
-    const base64Data = image.split(',')[1]
-    const buffer = Buffer.from(base64Data, 'base64')
-
     // Generate unique filename
-    const filename = `${Date.now()}-image.png`
-    const filepath = join(process.cwd(), 'public', 'uploads', filename)
-    console.log('Filepath:', filepath)
+    const fileExtension = extname(image.filename);
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    const filename = `${uniqueSuffix}${fileExtension}`;
+    
+    const uploadDir = join(process.cwd(), 'public', 'uploads');
+    const filepath = join(uploadDir, filename);
 
     // Ensure uploads folder exists
-    const fs = await import('fs/promises')
-    await fs.mkdir(join(process.cwd(), 'public', 'uploads'), { recursive: true })
-    console.log('Folder created')
+    await mkdir(uploadDir, { recursive: true });
 
     // Write file
-    await writeFile(filepath, buffer)
-    console.log('File written')
+    await writeFile(filepath, image.data);
 
-    return { path: `/uploads/${filename}` }
+    // Return the public path
+    return { path: `/uploads/${filename}` };
+    
   } catch (error) {
-    console.error('Upload error:', error)
+    console.error('Upload error:', error);
     throw createError({
       statusCode: 500,
-      statusMessage: 'Upload failed',
-      data: error.message
-    })
+      statusMessage: error.message || 'Upload failed',
+      data: error.message,
+    });
   }
-})
+});

@@ -8,9 +8,19 @@ export default defineEventHandler(async (event) => {
     const db = await connectToDatabase()
     const adminsCollection = db.collection('admins')
 
-    const admin = await adminsCollection.findOne({ email, password })
+    // Kiểm tra và tạo admin nếu chưa tồn tại
+    let admin = await adminsCollection.findOne({ email: 'admin@sunshine.com' })
+    if (!admin) {
+      const adminData = {
+        email: 'admin@sunshine.com',
+        password: 'sunshine@telecom',
+        createdAt: new Date()
+      }
+      await adminsCollection.insertOne(adminData)
+      admin = adminData
+    }
 
-    if (admin) {
+    if (admin.email === email && admin.password === password) {
       return { success: true, message: 'Login successful' }
     } else {
       return { success: false, message: 'Invalid credentials' }
