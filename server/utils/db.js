@@ -1,6 +1,6 @@
 import { MongoClient } from 'mongodb'
 
-const uri = process.env.MONGODB_URI || "mongodb+srv://quoctichle_db_user:Letich37@cluster0.ol5cjn6.mongodb.net/"
+const uri = process.env.MONGODB_URI || "mongodb+srv://quoctichle_db_user:Letich37@cluster0.ol5cjn6.mongodb.net/daugia?retryWrites=true&w=majority"
 
 if (!uri) {
   throw new Error("Missing MONGODB_URI")
