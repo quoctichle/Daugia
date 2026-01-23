@@ -1,11 +1,12 @@
-import { connectToDatabase } from '../utils/db.js'
+import clientPromise from '../utils/db.js'
 
 export default defineEventHandler(async (event) => {
   const method = event.node.req.method
 
   if (method === 'GET') {
     try {
-      const db = await connectToDatabase()
+      const client = await clientPromise
+      const db = client.db(process.env.MONGODB_DB || 'daugia')
       const configCollection = db.collection('game_config')
       const config = await configCollection.findOne({})
       return config || {}
@@ -21,7 +22,8 @@ export default defineEventHandler(async (event) => {
     const { config, products } = body
 
     try {
-      const db = await connectToDatabase()
+      const client = await clientPromise
+      const db = client.db(process.env.MONGODB_DB || 'daugia')
       const configCollection = db.collection('game_config')
       const productsCollection = db.collection('products')
 

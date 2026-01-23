@@ -1,8 +1,9 @@
-import { connectToDatabase } from '../utils/db.js'
+import clientPromise from '../utils/db.js'
 
 export default defineEventHandler(async (event) => {
   try {
-    const db = await connectToDatabase()
+    const client = await clientPromise
+    const db = client.db(process.env.MONGODB_DB || 'daugia')
     const adminsCollection = db.collection('admins')
 
     // Kiểm tra xem admin đã tồn tại chưa

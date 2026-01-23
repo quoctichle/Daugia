@@ -1,8 +1,9 @@
-import { connectToDatabase } from '../utils/db.js'
+import clientPromise from '../utils/db.js'
 
 export default defineEventHandler(async (event) => {
   try {
-    const db = await connectToDatabase()
+    const client = await clientPromise
+    const db = client.db(process.env.MONGODB_DB || 'daugia')
     const bidsCollection = db.collection('bids')
     const productsCollection = db.collection('products')
 
