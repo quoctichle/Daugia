@@ -167,7 +167,7 @@
           <p class="mt-1 text-sm text-gray-500">Dữ liệu đấu giá sẽ xuất hiện ở đây sau khi phiên đấu giá kết thúc.</p>
         </div>
         <div v-else class="space-y-6">
-          <div v-for="detail in sortedAuctionDetails" :key="detail.productId" class="p-6 border border-gray-200 rounded-lg bg-gray-50">
+          <div v-for="detail in sortedAuctionDetails" :key="detail.productId" @click="showBidDetails(detail)" class="p-6 border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors duration-200">
             <h3 class="text-lg font-semibold text-gray-800">{{ detail.productName }}</h3>
             <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div class="bg-green-100 text-green-800 p-3 rounded-md">
@@ -193,6 +193,46 @@
         </div>
       </div>
     </main>
+
+    <!-- Bid Details Modal -->
+    <div v-if="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div class="p-6 border-b flex justify-between items-center">
+          <h2 v-if="selectedProductForBids" class="text-2xl font-bold text-gray-800">Chi tiết đấu giá: {{ selectedProductForBids.productName }}</h2>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <div class="p-6 overflow-y-auto">
+          <div v-if="isLoadingBids" class="text-center py-10">
+            <p class="text-gray-500">Đang tải dữ liệu...</p>
+          </div>
+          <div v-else-if="detailedBids.length === 0" class="text-center py-10 text-gray-500">
+            <p>Không có ai tham gia đấu giá cho sản phẩm này.</p>
+          </div>
+          <table v-else class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người tham gia</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giá dự đoán</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="bid in detailedBids" :key="bid._id">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ bid.userEmail }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatCurrency(bid.amount) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDateTime(bid.createdAt) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="p-4 bg-gray-50 border-t flex justify-end">
+          <button @click="closeModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Đóng</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -207,6 +247,13 @@ const config = ref({
 })
 const products = ref([])
 const auctionDetails = ref([])
+
+// New state for the modal
+const detailedBids = ref([]);
+const isModalOpen = ref(false);
+const selectedProductForBids = ref(null);
+const isLoadingBids = ref(false);
+
 
 onMounted(async () => {
   await loadConfig()
@@ -258,6 +305,29 @@ const loadAuctionDetails = async () => {
     // Do not alert here to avoid bothering admin on auto-refresh
   }
 }
+
+const showBidDetails = async (detail) => {
+  selectedProductForBids.value = detail;
+  isModalOpen.value = true;
+  isLoadingBids.value = true;
+  detailedBids.value = [];
+  try {
+    const bids = await $fetch(`/api/auction-bids/${detail.productId}`);
+    detailedBids.value = bids;
+  } catch (error) {
+    console.error('Failed to load bid details:', error);
+    alert('Không thể tải chi tiết các lượt đấu giá.');
+    closeModal(); // Close modal on error
+  } finally {
+    isLoadingBids.value = false;
+  }
+};
+
+const closeModal = () => {
+  isModalOpen.value = false;
+  selectedProductForBids.value = null;
+  detailedBids.value = [];
+};
 
 const handleImageUpload = async (file) => {
   if (!file) return null;
@@ -321,6 +391,17 @@ const formatCurrency = (value) => {
   if (typeof value !== 'number') return 'N/A';
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 }
+
+const formatDateTime = (isoString) => {
+  if (!isoString) return 'N/A';
+  const d = new Date(isoString);
+  // Using vi-VN locale for a familiar date and time format
+  return d.toLocaleString('vi-VN', {
+    year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  });
+};
 
 const logout = () => {
   // Here you might want to clear any admin session/token
