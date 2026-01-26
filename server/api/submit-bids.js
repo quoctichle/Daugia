@@ -30,11 +30,35 @@ export default defineEventHandler(async (event) => {
     }
 
     // 2. Check auction status
-    const now = new Date().getTime()
-    const startTime = new Date(product.startTime).getTime()
-    const endTime = startTime + (product.auctionDuration * 60000)
+    const now = new Date(); // Current time in UTC
+
+    const startTimeString = product.startTime;
+    let startTime;
+
+    // The start time from the client can be in two formats:
+    // 1. A full ISO string with 'Z' if it comes directly from the DB.
+    // 2. A local datetime string (e.g., '2024-07-29T19:00') if it was just edited.
+    // We need to handle both cases to get the correct UTC time.
+    if (startTimeString && startTimeString.endsWith('Z')) {
+        // It's already in UTC.
+        startTime = new Date(startTimeString);
+    } else if (startTimeString) {
+        // It's a local time string. Assume it's from Vietnam (UTC+7).
+        // Appending the offset ensures it's parsed into the correct UTC time.
+        startTime = new Date(startTimeString + '+07:00');
+    } else {
+        // No start time provided for the product.
+        throw createError({ statusCode: 400, statusMessage: 'Sản phẩm chưa được cấu hình thời gian đấu giá.' });
+    }
+
+    const endTime = new Date(startTime.getTime() + (product.auctionDuration * 60000));
+    
     if (now < startTime || now > endTime) {
-        throw createError({ statusCode: 400, statusMessage: 'Phiên đấu giá không hoạt động.' })
+        // For debugging, you can log the times:
+        // console.log('Current Time (UTC):', now.toISOString());
+        // console.log('Auction Start (UTC):', startTime.toISOString());
+        // console.log('Auction End (UTC):', endTime.toISOString());
+        throw createError({ statusCode: 400, statusMessage: 'Phiên đấu giá không hoạt động.' });
     }
 
     // 3. Check participation limit
