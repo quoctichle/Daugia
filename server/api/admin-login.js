@@ -5,7 +5,6 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { email, password } = body
 
-  // Basic validation
   if (!email || !password) {
     return { success: false, message: 'Email and password are required.' }
   }
@@ -20,8 +19,20 @@ export default defineEventHandler(async (event) => {
 
     let admin = await adminsCollection.findOne({ email: adminEmail });
 
-    // If admin does not exist, create it.
-    if (!admin) {
+    if (admin) {
+      // If admin exists, check if the password is a valid hash. 
+      // If not, it's likely an old plain-text password. Re-hash and update it.
+      const isHashed = admin.password && (admin.password.startsWith('$2a$') || admin.password.startsWith('$2b$'));
+      if (!isHashed) {
+        const hashedPassword = await bcrypt.hash(adminPassword, 10);
+        await adminsCollection.updateOne(
+          { _id: admin._id },
+          { $set: { password: hashedPassword } }
+        );
+        admin.password = hashedPassword; // Update for the current request
+      }
+    } else {
+      // If admin does not exist, create it with a hashed password.
       const hashedPassword = await bcrypt.hash(adminPassword, 10);
       const adminData = {
         email: adminEmail,
@@ -29,11 +40,15 @@ export default defineEventHandler(async (event) => {
         createdAt: new Date()
       };
       await adminsCollection.insertOne(adminData);
-      // Use the newly created admin for the current login attempt
       admin = adminData;
     }
 
-    // Now, compare the provided password with the stored hash
+    // Now, compare the provided password with the stored hash.
+    // Ensure admin object and password exist before comparing.
+    if (!admin || !admin.password) {
+        return { success: false, message: 'Admin account is not configured correctly.' };
+    }
+    
     const isValid = await bcrypt.compare(password, admin.password);
 
     if (admin.email === email && isValid) {
