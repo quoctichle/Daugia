@@ -68,25 +68,7 @@
                 </div>
               </div>
             </div>
-            <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
-               <div>
-                  <label for="startTime" class="block text-sm font-medium text-gray-700">Thời gian bắt đầu</label>
-                  <input id="startTime" v-model="config.startTime" type="datetime-local" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                </div>
-                <div>
-                  <label for="auctionDuration" class="block text-sm font-medium text-gray-700">Thời gian đấu giá (phút)</label>
-                  <input id="auctionDuration" v-model.number="config.auctionDuration" type="number" min="1" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                </div>
-                <div>
-                  <label for="winnersCount" class="block text-sm font-medium text-gray-700">Số người trúng giải</label>
-                  <input id="winnersCount" v-model.number="config.winnersCount" type="number" min="1" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                </div>
-                <div>
-                  <label for="maxParticipations" class="block text-sm font-medium text-gray-700">Số lần dự đoán tối đa / Gmail</label>
-                  <input id="maxParticipations" v-model.number="config.maxParticipations" type="number" min="1" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                </div>
-            </div>
-             <div class="mt-6">
+            <div class="mt-6">
                 <label for="rules" class="block text-sm font-medium text-gray-700">Thể lệ chương trình</label>
                 <textarea id="rules" v-model="config.rules" rows="5" placeholder="Nhập thể lệ chương trình..." required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
               </div>
@@ -106,6 +88,10 @@
                   <tr>
                     <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Sản phẩm</th>
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Giá khởi điểm</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Thời gian bắt đầu</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Thời gian đấu giá (phút)</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Số người trúng giải</th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Số lượt đấu giá</th>
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Mô tả</th>
                     <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
                       <span class="sr-only">Thao tác</span>
@@ -114,7 +100,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
                   <tr v-if="products.length === 0">
-                    <td colspan="4" class="whitespace-nowrap px-3 py-4 text-sm text-center text-gray-500">Chưa có sản phẩm nào.</td>
+                    <td colspan="8" class="whitespace-nowrap px-3 py-4 text-sm text-center text-gray-500">Chưa có sản phẩm nào.</td>
                   </tr>
                   <tr v-for="(product, index) in products" :key="index">
                     <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
@@ -130,6 +116,18 @@
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <input v-model.number="product.startPrice" type="number" placeholder="Giá" min="0" required class="w-32 border-gray-200 rounded-md" />
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      <input v-model="product.startTime" type="datetime-local" class="w-40 border-gray-200 rounded-md" />
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      <input v-model.number="product.auctionDuration" type="number" min="1" placeholder="60" class="w-20 border-gray-200 rounded-md" />
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      <input v-model.number="product.winnersCount" type="number" min="1" placeholder="1" class="w-20 border-gray-200 rounded-md" />
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      <input v-model.number="product.maxParticipations" type="number" min="1" placeholder="3" class="w-20 border-gray-200 rounded-md" />
                     </td>
                     <td class="px-3 py-4 text-sm text-gray-500">
                       <input v-model="product.description" placeholder="Mô tả ngắn" class="w-full border-gray-200 rounded-md" />
@@ -205,10 +203,6 @@ const activeTab = ref('config')
 const config = ref({
   logo: '',
   mascot: '',
-  startTime: '',
-  auctionDuration: 60,
-  winnersCount: 1,
-  maxParticipations: 3,
   rules: ''
 })
 const products = ref([])
@@ -233,12 +227,6 @@ const loadConfig = async () => {
   try {
     const data = await $fetch('/api/game-config')
     if (data) {
-      // Format startTime for datetime-local input
-      if (data.startTime) {
-        const d = new Date(data.startTime);
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        data.startTime = d.toISOString().slice(0, 16);
-      }
       Object.assign(config.value, data)
     }
   } catch (error) {
@@ -304,7 +292,7 @@ const handleProductImageUpload = async (index, event) => {
 }
 
 const addProduct = () => {
-  products.value.unshift({ name: '', description: '', startPrice: 0, image: '' })
+  products.value.unshift({ name: '', description: '', startPrice: 0, image: '', startTime: '', auctionDuration: 60, winnersCount: 1, maxParticipations: 3 })
 }
 
 const removeProduct = (index) => {
@@ -316,11 +304,6 @@ const removeProduct = (index) => {
 const saveConfig = async () => {
   try {
     const configToSave = { ...config.value };
-    // Convert local datetime back to UTC for saving
-    if (configToSave.startTime) {
-        const d = new Date(configToSave.startTime);
-        configToSave.startTime = d.toISOString();
-    }
 
     await $fetch('/api/game-config', {
       method: 'POST',

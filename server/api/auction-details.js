@@ -7,23 +7,26 @@ export default defineEventHandler(async (event) => {
     const bidsCollection = db.collection('bids')
     const productsCollection = db.collection('products')
 
-    // Giả lập logic: lấy bids cao nhất cho mỗi product
     const products = await productsCollection.find({}).toArray()
     const details = []
 
     for (const product of products) {
+      const winnersCount = product.winnersCount || 1
       const highestBids = await bidsCollection
         .find({ productId: product._id })
         .sort({ amount: -1 })
-        .limit(1) // Hoặc limit theo winnersCount
+        .limit(winnersCount)
         .toArray()
 
       if (highestBids.length > 0) {
+        const winners = highestBids.map(bid => ({ email: bid.userEmail, amount: bid.amount }))
+        const lowestWinningBid = highestBids[highestBids.length - 1].amount
         details.push({
           productId: product._id,
           productName: product.name,
           highestBid: highestBids[0].amount,
-          winners: [highestBids[0].userEmail] // Giả lập 1 winner
+          lowestWinningBid,
+          winners
         })
       }
     }

@@ -1,4 +1,5 @@
 import clientPromise from '../utils/db.js'
+import bcrypt from 'bcrypt'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -12,10 +13,13 @@ export default defineEventHandler(async (event) => {
       return { message: 'Admin account already exists' }
     }
 
+    // Hash the password
+    const hashedPassword = await bcrypt.hash('sunshine@telecom', 10)
+
     // Tạo tài khoản admin
     const adminData = {
       email: 'admin@sunshine.com',
-      password: 'sunshine@telecom', // Trong thực tế nên hash password
+      password: hashedPassword, // Save the hashed password
       createdAt: new Date()
     }
 
