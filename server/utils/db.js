@@ -1,9 +1,13 @@
 import { MongoClient } from 'mongodb'
 
-const uri = process.env.MONGODB_URI || (process.env.NODE_ENV === 'production' ? "mongodb://localhost:27017" : "mongodb+srv://vercel_user:VercelSecurePass123!@cluster0.ol5cjn6.mongodb.net/daugia?retryWrites=true&w=majority")
+// WARNING: It is not recommended to store credentials directly in the code.
+// Please set the MONGODB_URI environment variable in your hosting provider (e.g., Vercel).
+const MONGODB_URI_FALLBACK = "mongodb+srv://quoctichle_db_user:Letich37@cluster0.ol5cjn6.mongodb.net/daugia?retryWrites=true&w=majority";
+
+const uri = process.env.MONGODB_URI || MONGODB_URI_FALLBACK
 
 if (!uri) {
-  throw new Error("Missing MONGODB_URI")
+  throw new Error("Missing MONGODB_URI and no fallback URI was provided.")
 }
 
 let client
