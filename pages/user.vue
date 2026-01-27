@@ -35,7 +35,7 @@
                  @click="goToAuction(product._id)">
               <div class="p-6">
                 <div class="flex flex-col items-center space-y-4">
-                  <img v-if="product.image" :src="product.image" alt="Product" class="w-32 h-32 object-cover rounded-xl shadow-lg border-2 border-white/10" />
+                  <NuxtImg v-if="product.image" :src="product.image" :alt="product.name" width="128" height="128" format="webp" class="w-32 h-32 object-cover rounded-xl shadow-lg border-2 border-white/10" />
                   <div class="text-center">
                     <h4 class="text-2xl font-bold text-yellow-400">{{ product.name }}</h4>
                     <p class="text-gray-300 mt-2">{{ product.description }}</p>
@@ -51,6 +51,11 @@
                 </div>
               </div>
             </div>
+          </div>
+          <div v-if="hasMoreProducts" class="text-center mt-12">
+            <button @click="loadProducts" class="bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold px-8 py-4 rounded-full shadow-lg hover:shadow-cyan-500/30 transform hover:-translate-y-1 transition-all duration-300">
+              Xem thêm sản phẩm
+            </button>
           </div>
         </div>
 
@@ -73,6 +78,9 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 const pageLoaded = ref(false)
 const config = ref({})
 const products = ref([])
+const page = ref(1)
+const limit = ref(6) // 3 columns, 2 rows
+const hasMoreProducts = ref(true)
 let countdownInterval
 
 const userEmail = computed(() => useState('userEmail').value || 'Guest')
@@ -89,17 +97,45 @@ onUnmounted(() => {
   if (countdownInterval) clearInterval(countdownInterval)
 })
 
+const loadProducts = async () => {
+  if (!hasMoreProducts.value) return;
+
+  try {
+    const newProducts = await $fetch('/api/products', {
+      params: {
+        page: page.value,
+        limit: limit.value
+      }
+    })
+
+    if (newProducts && newProducts.length > 0) {
+      products.value.push(...newProducts)
+      page.value++
+    } else {
+      hasMoreProducts.value = false
+    }
+    
+    // If less products than limit received, assume no more pages
+    if (newProducts.length < limit.value) {
+      hasMoreProducts.value = false
+    }
+
+  } catch (error) {
+    console.error(`Failed to load products for page ${page.value}:`, error);
+    hasMoreProducts.value = false // Stop trying on error
+  }
+}
+
 const loadInitialData = async () => {
   try {
-    [config.value] = await Promise.all([
-      $fetch('/api/game-config')
+    // Fire off requests in parallel
+    const [configData] = await Promise.all([
+      $fetch('/api/game-config'),
+      loadProducts() // Load initial set of products
     ]);
     
-    // Load products
-    const productsData = await $fetch('/api/products')
-    if (productsData) {
-      products.value = productsData
-    }
+    config.value = configData
+
   } catch (error) {
     console.error('Failed to load initial data:', error);
   }

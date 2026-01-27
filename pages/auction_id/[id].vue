@@ -9,7 +9,7 @@
     <div class="relative z-10 container mx-auto p-4 sm:p-6 lg:p-8">
       <header class="flex flex-col sm:flex-row justify-between items-center py-4 mb-12 border-b border-gray-700/50">
         <div class="flex items-center space-x-4 mb-4 sm:mb-0">
-          <img v-if="config.logo" :src="config.logo" alt="Logo" class="h-14 w-14 object-contain rounded-full bg-white/10 p-1 transition-transform duration-300 hover:scale-110" />
+          <NuxtImg v-if="config.logo" :src="config.logo" alt="Logo" width="56" height="56" format="webp" class="h-14 w-14 object-contain rounded-full bg-white/10 p-1 transition-transform duration-300 hover:scale-110" />
           <div>
             <h1 class="text-3xl font-bold text-white">ĐẤU GIÁ SẢN PHẨM</h1>
             <p class="text-sm text-gray-400">Xin chào, <span class="font-semibold text-yellow-400">{{ userEmail }}</span></p>
@@ -25,7 +25,7 @@
         <div class="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg overflow-hidden">
           <div class="p-8">
             <div class="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
-              <img v-if="product.image" :src="product.image" alt="Product" class="w-full md:w-64 h-64 object-cover rounded-xl shadow-lg border-2 border-white/10" />
+              <NuxtImg v-if="product.image" :src="product.image" :alt="product.name" width="256" height="256" format="webp" class="w-full md:w-64 h-64 object-cover rounded-xl shadow-lg border-2 border-white/10" />
               <div class="flex-1 text-center md:text-left">
                 <h2 class="text-4xl font-bold text-yellow-400 mb-4">{{ product.name }}</h2>
                 <p class="text-gray-300 text-lg mb-4">{{ product.description }}</p>
