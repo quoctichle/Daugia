@@ -20,7 +20,9 @@ export default defineEventHandler(async (event) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
     const filename = `${uniqueSuffix}${fileExtension}`;
     
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
+    const uploadDir = process.env.VERCEL
+      ? join('/tmp', 'uploads')
+      : join(process.cwd(), 'public', 'uploads');
     const filepath = join(uploadDir, filename);
 
     // Ensure uploads folder exists
