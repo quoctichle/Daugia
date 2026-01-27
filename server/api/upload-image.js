@@ -1,6 +1,5 @@
 import { writeFile, mkdir } from 'fs/promises';
-import { join, extname, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { join, extname } from 'path';
 import { readMultipartFormData } from 'h3';
 
 export default defineEventHandler(async (event) => {
@@ -21,10 +20,12 @@ export default defineEventHandler(async (event) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
     const filename = `${uniqueSuffix}${fileExtension}`;
     
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    const uploadDir = process.env.VERCEL
-      ? join('/tmp', 'uploads')
-      : join(__dirname, '..', '..', 'public', 'uploads');
+    let uploadDir;
+    if (process.env.VERCEL || process.env.LAMBDA_TASK_ROOT) {
+      uploadDir = join('/tmp', 'uploads');
+    } else {
+      uploadDir = join(process.cwd(), 'public', 'uploads');
+    }
     const filepath = join(uploadDir, filename);
 
     // Ensure uploads folder exists
@@ -34,7 +35,7 @@ export default defineEventHandler(async (event) => {
     await writeFile(filepath, image.data);
 
     // Return the public path
-    return { path: `/uploads/${filename}` };
+    return { path: `/api/uploads/${filename}` };
     
   } catch (error) {
     console.error('Upload error:', error);
