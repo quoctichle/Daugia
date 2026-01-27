@@ -18,7 +18,7 @@
       <div class="mb-8">
         <div class="flex border-b border-gray-200">
           <button
-            @click="activeTab = 'config'"
+            @click="setActiveTab('config')"
             :class="[
               'px-4 py-3 font-medium text-sm transition-colors duration-200',
               activeTab === 'config' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-gray-500 hover:text-gray-700'
@@ -27,7 +27,7 @@
             Cấu hình Sự kiện
           </button>
           <button
-            @click="activeTab = 'auction'"
+            @click="setActiveTab('auction')"
             :class="[
               'px-4 py-3 font-medium text-sm transition-colors duration-200',
               activeTab === 'auction' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-gray-500 hover:text-gray-700'
@@ -240,6 +240,7 @@
 import { ref, onMounted, computed } from 'vue'
 
 const activeTab = ref('config')
+const hasLoadedAuctionDetails = ref(false)
 const config = ref({
   logo: '',
   mascot: '',
@@ -256,9 +257,8 @@ const isLoadingBids = ref(false);
 
 
 onMounted(async () => {
-  await loadConfig()
-  await loadProducts()
-  await loadAuctionDetails()
+  // Tải config và danh sách sản phẩm song song để nhanh hơn
+  await Promise.all([loadConfig(), loadProducts()])
 })
 
 const sortedAuctionDetails = computed(() => {
@@ -299,10 +299,20 @@ const loadAuctionDetails = async () => {
     const data = await $fetch('/api/auction-details')
     if (data) {
       auctionDetails.value = data
+      hasLoadedAuctionDetails.value = true
     }
   } catch (error) {
     console.error('Failed to load auction details:', error)
     // Do not alert here to avoid bothering admin on auto-refresh
+  }
+}
+
+const setActiveTab = async (tab) => {
+  activeTab.value = tab
+
+  // Chỉ gọi API chi tiết đấu giá khi cần và chỉ gọi 1 lần
+  if (tab === 'auction' && !hasLoadedAuctionDetails.value) {
+    await loadAuctionDetails()
   }
 }
 

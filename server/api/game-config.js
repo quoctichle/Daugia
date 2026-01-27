@@ -1,22 +1,9 @@
-import { MongoClient, ObjectId } from 'mongodb'
-
-// Connection URI should be in environment variables in a real app
-const uri = "mongodb+srv://quoctichle_db_user:Letich37@cluster0.ol5cjn6.mongodb.net/daugia?retryWrites=true&w=majority"
-let cachedClient = null
-
-// Function to establish connection to the database
-async function getDB() {
-  if (!cachedClient) {
-    cachedClient = new MongoClient(uri)
-    await cachedClient.connect()
-    console.log('✅ MongoDB connected from api/game-config')
-  }
-  return cachedClient.db('daugia')
-}
+import { ObjectId } from 'mongodb'
+import { connectToDatabase } from '../utils/db.js'
 
 export default defineEventHandler(async (event) => {
   const method = event.node.req.method
-  const db = await getDB()
+  const db = await connectToDatabase()
 
   // Handle GET request to fetch configuration
   if (method === 'GET') {

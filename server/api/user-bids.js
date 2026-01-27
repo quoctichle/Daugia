@@ -16,7 +16,22 @@ export default defineEventHandler(async (event) => {
     const db = client.db(process.env.MONGODB_DB || 'daugia')
     const bidsCollection = db.collection('bids')
 
-    const userBids = await bidsCollection.find({ userEmail }).toArray()
+    // Chỉ lấy những trường cần thiết và sắp xếp để giảm payload + dễ xử lý
+    const userBids = await bidsCollection
+      .find(
+        { userEmail },
+        {
+          projection: {
+            _id: 1,
+            productId: 1,
+            amount: 1,
+            bidNumber: 1,
+            createdAt: 1
+          }
+        }
+      )
+      .sort({ createdAt: -1 })
+      .toArray()
 
     // Group by productId
     const bidsByProduct = {}

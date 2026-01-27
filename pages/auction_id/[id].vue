@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="bg-gray-900 text-white min-h-screen font-sans">
     <div class="absolute inset-0 z-0 opacity-10">
       <div class="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900"></div>
@@ -20,76 +20,123 @@
         </button>
       </header>
 
-      <main v-if="product" class="space-y-12">
-        <!-- Thông tin sản phẩm -->
-        <div class="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg overflow-hidden">
-          <div class="p-8">
-            <div class="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
-              <NuxtImg v-if="product.image" :src="product.image" :alt="product.name" width="256" height="256" format="webp" class="w-full md:w-64 h-64 object-cover rounded-xl shadow-lg border-2 border-white/10" />
-              <div class="flex-1 text-center md:text-left">
-                <h2 class="text-4xl font-bold text-yellow-400 mb-4">{{ product.name }}</h2>
-                <p class="text-gray-300 text-lg mb-4">{{ product.description }}</p>
-                <p class="text-2xl font-semibold text-white mb-4">
-                  Giá khởi điểm: {{ formatCurrency(product.startPrice) }}
-                </p>
-                <div class="text-lg">
-                  <span :class="auctionStatus === 'Đang đấu giá' ? 'text-green-400' : auctionStatus === 'Chưa bắt đầu' ? 'text-yellow-400' : 'text-red-400'">
-                    Trạng thái: {{ auctionStatus }}
-                  </span>
+      <main v-if="product" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Cột trái: Thông tin sản phẩm + countdown + form -->
+        <div class="lg:col-span-2 space-y-12">
+          <!-- Thông tin sản phẩm -->
+          <div class="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg overflow-hidden">
+            <div class="p-8">
+              <div class="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
+                <NuxtImg v-if="product.image" :src="product.image" :alt="product.name" width="256" height="256" format="webp" class="w-full md:w-64 h-64 object-cover rounded-xl shadow-lg border-2 border-white/10" />
+                <div class="flex-1 text-center md:text-left">
+                  <h2 class="text-4xl font-bold text-yellow-400 mb-4">{{ product.name }}</h2>
+                  <p class="text-gray-300 text-lg mb-4">{{ product.description }}</p>
+                  <p class="text-2xl font-semibold text-white mb-4">
+                    Giá khởi điểm: {{ formatCurrency(product.startPrice) }}
+                  </p>
+                  <div class="text-lg">
+                    <span :class="auctionStatus === 'Đang đấu giá' ? 'text-green-400' : auctionStatus === 'Chưa bắt đầu' ? 'text-yellow-400' : 'text-red-400'">
+                      Trạng thái: {{ auctionStatus }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Thời gian đấu giá -->
-        <div v-if="auctionStatus !== 'Đã kết thúc'" class="text-center p-8 bg-black/20 backdrop-blur-md rounded-3xl shadow-2xl border border-white/10">
-          <h2 class="text-xl font-medium text-gray-300 mb-3 tracking-widest uppercase">Thời gian còn lại</h2>
-          <div class="text-7xl font-bold text-yellow-400 drop-shadow-lg mb-4">
-            {{ countdown }}
-          </div>
-          <div class="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
-            <div class="bg-gradient-to-r from-yellow-400 to-amber-500 h-3 rounded-full transition-all duration-500" :style="{ width: countdownPercent + '%' }"></div>
-          </div>
-        </div>
-
-        <!-- Form đấu giá hoặc thông tin bids -->
-        <div v-if="userBids && userBids.length > 0" class="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg overflow-hidden">
-          <div class="p-8">
-            <h3 class="text-2xl font-bold text-yellow-400 mb-6">Giá bạn đã dự đoán</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div v-for="bid in userBids" :key="bid._id" class="bg-teal-900/50 border border-teal-400 rounded-lg p-4">
-                <p class="text-teal-300 font-semibold">Lần {{ bid.bidNumber }}</p>
-                <p class="text-2xl font-bold text-white">{{ formatCurrency(bid.amount) }}</p>
-              </div>
+          <!-- Thời gian đấu giá -->
+          <div v-if="auctionStatus !== 'Đã kết thúc'" class="text-center p-8 bg-black/20 backdrop-blur-md rounded-3xl shadow-2xl border border-white/10">
+            <h2 class="text-xl font-medium text-gray-300 mb-3 tracking-widest uppercase">Thời gian còn lại</h2>
+            <div class="text-7xl font-bold text-yellow-400 drop-shadow-lg mb-4">
+              {{ countdown }}
+            </div>
+            <div class="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
+              <div class="bg-gradient-to-r from-yellow-400 to-amber-500 h-3 rounded-full transition-all duration-500" :style="{ width: countdownPercent + '%' }"></div>
             </div>
           </div>
-        </div>
 
-        <div v-else-if="auctionStatus === 'Đang đấu giá'" class="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg overflow-hidden">
-          <div class="p-8">
-            <h3 class="text-2xl font-bold text-yellow-400 mb-6">Nhập giá dự đoán</h3>
-            <form @submit.prevent="submitBids" class="space-y-6">
+          <!-- Form đấu giá hoặc thông tin bids -->
+          <div v-if="userBids && userBids.length > 0" class="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg overflow-hidden">
+            <div class="p-8">
+              <h3 class="text-2xl font-bold text-yellow-400 mb-6">Giá bạn đã dự đoán</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div v-for="i in maxParticipations" :key="i">
-                  <label :for="`bid-${i}`" class="block text-sm font-medium text-gray-400 mb-2">Dự đoán lần {{ i }}</label>
-                  <input :id="`bid-${i}`" v-model="bids[i-1]" type="number" :placeholder="`Nhập giá tiền`" step="1000" required
-                         class="w-full px-4 py-3 bg-gray-800/60 border-2 border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition duration-300" />
+                <div v-for="bid in userBids" :key="bid._id" class="bg-teal-900/50 border border-teal-400 rounded-lg p-4">
+                  <p class="text-teal-300 font-semibold">Lần {{ bid.bidNumber }}</p>
+                  <p class="text-2xl font-bold text-white">{{ formatCurrency(bid.amount) }}</p>
                 </div>
               </div>
-              <button type="submit" :disabled="isSubmitting"
-                      class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-4 rounded-xl text-lg shadow-lg hover:shadow-teal-500/30 transform hover:-translate-y-1 transition-all duration-300 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:shadow-none">
-                {{ isSubmitting ? 'ĐANG GỬI...' : 'GỬI DỮ ĐOÁN' }}
-              </button>
-            </form>
+            </div>
+          </div>
+
+          <div v-else-if="auctionStatus === 'Đang đấu giá'" class="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg overflow-hidden">
+            <div class="p-8">
+              <h3 class="text-2xl font-bold text-yellow-400 mb-6">Nhập giá dự đoán</h3>
+              <form @submit.prevent="submitBids" class="space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div v-for="i in maxParticipations" :key="i">
+                    <label :for="`bid-${i}`" class="block text-sm font-medium text-gray-400 mb-2">Dự đoán lần {{ i }}</label>
+                    <input :id="`bid-${i}`" v-model="bids[i-1]" type="number" :placeholder="`Nhập giá tiền`" step="1000" required
+                           class="w-full px-4 py-3 bg-gray-800/60 border-2 border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition duration-300" />
+                  </div>
+                </div>
+                <button type="submit" :disabled="isSubmitting"
+                        class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-4 rounded-xl text-lg shadow-lg hover:shadow-teal-500/30 transform hover:-translate-y-1 transition-all duration-300 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:shadow-none">
+                  {{ isSubmitting ? 'ĐANG GỬI...' : 'GỬI DỮ ĐOÁN' }}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div v-else class="text-center p-8 bg-black/20 backdrop-blur-md rounded-2xl shadow-lg border border-white/10">
+            <p class="text-gray-400 text-lg">
+              {{ auctionStatus === 'Chưa bắt đầu' ? 'Phiên đấu giá chưa bắt đầu.' : 'Phiên đấu giá đã kết thúc.' }}
+            </p>
           </div>
         </div>
 
-        <div v-else class="text-center p-8 bg-black/20 backdrop-blur-md rounded-2xl shadow-lg border border-white/10">
-          <p class="text-gray-400 text-lg">
-            {{ auctionStatus === 'Chưa bắt đầu' ? 'Phiên đấu giá chưa bắt đầu.' : 'Phiên đấu giá đã kết thúc.' }}
-          </p>
-        </div>
+        <!-- Cột phải: Leaderboard -->
+        <aside class="lg:col-span-1 lg:sticky lg:top-24 h-fit">
+          <div class="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg overflow-hidden">
+            <div class="p-8">
+              <div class="flex items-center justify-between gap-4 mb-6">
+                <h3 class="text-2xl font-bold text-yellow-400">Người tham gia đấu giá</h3>
+                <button
+                  type="button"
+                  @click="loadLeaderboard"
+                  class="text-sm font-medium text-cyan-300 hover:text-cyan-200 transition-colors"
+                >
+                  Cập nhật
+                </button>
+              </div>
+
+              <div v-if="isLoadingLeaderboard" class="text-gray-400">Đang tải danh sách...</div>
+              <div v-else-if="leaderboard.length === 0" class="text-gray-400">Chưa có ai tham gia.</div>
+              <ul v-else class="space-y-3">
+                <li
+                  v-for="(row, idx) in leaderboard"
+                  :key="row.userEmail"
+                  class="flex items-center justify-between gap-4 p-4 rounded-lg bg-gray-800/40 border border-white/10"
+                >
+                  <div class="flex items-center gap-4 min-w-0">
+                    <div class="w-10 text-gray-400 font-semibold">#{{ idx + 1 }}</div>
+                    <div class="min-w-0">
+                      <div class="font-mono text-gray-200 truncate">
+                        {{ maskEmail(row.userEmail) }}
+                      </div>
+                      <div class="text-xs text-gray-400">
+                        {{ row.bidsCount }} lượt dự đoán
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-lg font-bold text-white">{{ formatCurrency(row.highestBid) }}</div>
+                    <div class="text-xs text-gray-400">Giá cao nhất</div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </aside>
       </main>
 
       <div v-else class="text-center py-12">
@@ -113,7 +160,10 @@ const countdown = ref('Đang tải...')
 const countdownPercent = ref(100)
 const userBids = ref([])
 const isSubmitting = ref(false)
+const leaderboard = ref([])
+const isLoadingLeaderboard = ref(false)
 let countdownInterval
+let leaderboardInterval
 
 const userEmail = computed(() => useState('userEmail').value || 'Guest')
 
@@ -127,6 +177,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (countdownInterval) clearInterval(countdownInterval)
+  if (leaderboardInterval) clearInterval(leaderboardInterval)
 })
 
 const loadData = async () => {
@@ -137,7 +188,8 @@ const loadData = async () => {
     ])
 
     if (product.value) {
-      await loadUserBids()
+      await Promise.all([loadUserBids(), loadLeaderboard()])
+      startLeaderboardPolling()
       initializeBids()
     }
   } catch (error) {
@@ -154,6 +206,41 @@ const loadUserBids = async () => {
   } catch (error) {
     console.error('Failed to load user bids:', error)
   }
+}
+
+const loadLeaderboard = async () => {
+  if (!productId) return
+  if (isLoadingLeaderboard.value) return
+  isLoadingLeaderboard.value = true
+  try {
+    const data = await $fetch(`/api/auction-leaderboard/${productId}`, { query: { limit: 50, _t: Date.now() } })
+    leaderboard.value = Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('Failed to load leaderboard:', error)
+    leaderboard.value = []
+  } finally {
+    isLoadingLeaderboard.value = false
+  }
+}
+
+const startLeaderboardPolling = () => {
+  if (leaderboardInterval) clearInterval(leaderboardInterval)
+
+  const getIntervalMs = () => {
+    if (auctionStatus.value === 'Đang đấu giá') return 3000
+    if (auctionStatus.value === 'Chưa bắt đầu') return 8000
+    return 15000
+  }
+
+  let lastMs = getIntervalMs()
+  leaderboardInterval = setInterval(async () => {
+    const nextMs = getIntervalMs()
+    if (nextMs !== lastMs) {
+      startLeaderboardPolling()
+      return
+    }
+    await loadLeaderboard()
+  }, lastMs)
 }
 
 const initializeBids = () => {
@@ -244,13 +331,29 @@ const submitBids = async () => {
     })
 
     alert('Dự đoán của bạn đã được gửi thành công!')
-    await loadUserBids()
+    await Promise.all([loadUserBids(), loadLeaderboard()])
     bids.value = []
   } catch (error) {
     alert('Lỗi khi gửi dự đoán: ' + (error.data?.message || error.message))
   } finally {
     isSubmitting.value = false
   }
+}
+
+const maskEmail = (email) => {
+  if (!email || typeof email !== 'string') return ''
+  const [local, domain] = email.split('@')
+  if (!domain) return email
+
+  const safeLocal = local || ''
+  if (safeLocal.length <= 2) {
+    return `${safeLocal[0] || ''}*@${domain}`
+  }
+
+  const start = safeLocal.slice(0, 2)
+  const end = safeLocal.slice(-1)
+  const maskLen = Math.max(safeLocal.length - (start.length + end.length), 1)
+  return `${start}${'*'.repeat(maskLen)}${end}@${domain}`
 }
 
 const formatCurrency = (value) => {
