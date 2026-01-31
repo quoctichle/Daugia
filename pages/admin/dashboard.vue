@@ -285,8 +285,10 @@ const loadConfig = async () => {
 const loadProducts = async () => {
   try {
     const data = await $fetch('/api/products')
-    if (data) {
-      products.value = data
+    if (data && Array.isArray(data.products)) {
+      products.value = data.products
+    } else {
+      products.value = []
     }
   } catch (error) {
     console.error('Failed to load products:', error)

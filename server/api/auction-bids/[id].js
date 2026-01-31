@@ -16,12 +16,17 @@ export default defineEventHandler(async (event) => {
     // Re-using the connectToDatabase utility from the existing db.js file
     const db = await connectToDatabase();
     
-    const bids = await db.collection('bids').find({
-      productId: new ObjectId(productId)
-    })
-    .sort({ createdAt: -1 }) // Sort by most recent bid first
-    .toArray();
+    const query = getQuery(event);
+    const limit = Math.min(parseInt(query.limit) || 50, 200);
+    const skip = Math.max(parseInt(query.skip) || 0, 0);
+    const bids = await db.collection('bids')
+      .find({ productId: new ObjectId(productId) })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
 
+    // Gợi ý: Đảm bảo đã tạo index cho { productId, createdAt }
     return bids;
 
   } catch (error) {

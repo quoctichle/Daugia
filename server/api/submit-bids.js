@@ -63,11 +63,24 @@ export default defineEventHandler(async (event) => {
 
     // 3. Check participation limit
     const maxParticipations = product.maxParticipations || 1
-    const existingBidsCount = await bidsCollection.countDocuments({ productId, userEmail })
-
-    // Lấy bid cao nhất hiện tại cho sản phẩm này
-    const highestBid = await bidsCollection.find({ productId }).sort({ amount: -1, createdAt: 1 }).limit(1).toArray()
-    const highestBidder = highestBid[0]?.userEmail
+    // Gom 2 truy vấn thành 1 aggregate để tối ưu tốc độ
+    const agg = await bidsCollection.aggregate([
+      { $match: { productId } },
+      {
+        $group: {
+          _id: null,
+          highestBid: { $max: "$amount" },
+          highestBidder: { $first: "$userEmail" },
+          userCount: {
+            $sum: {
+              $cond: [ { $eq: ["$userEmail", userEmail] }, 1, 0 ]
+            }
+          }
+        }
+      }
+    ]).toArray();
+    const highestBidder = agg[0]?.highestBidder;
+    const existingBidsCount = agg[0]?.userCount || 0;
 
     // Nếu user là người cao nhất thì vẫn giữ giới hạn, còn không thì cho phép tiếp tục dự đoán
     if (userEmail === highestBidder && (existingBidsCount + bids.length > maxParticipations)) {
@@ -76,6 +89,8 @@ export default defineEventHandler(async (event) => {
         statusMessage: `Bạn chỉ có thể dự đoán tối đa ${maxParticipations} lần. Bạn đã dự đoán ${existingBidsCount} lần.`
       })
     }
+
+    // Gợi ý: Đảm bảo đã tạo index cho { productId, userEmail }, { productId, amount }, { productId, createdAt } để tối ưu các truy vấn lớn
 
     // 4. Validate bid amounts and add timestamp
     const bidsToInsert = bids.map(bid => {

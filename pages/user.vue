@@ -108,18 +108,16 @@ const loadProducts = async () => {
       }
     })
 
-    if (newProducts && newProducts.length > 0) {
-      products.value.push(...newProducts)
+    if (newProducts && Array.isArray(newProducts.products) && newProducts.products.length > 0) {
+      products.value.push(...newProducts.products)
       page.value++
+      // If less products than limit received, assume no more pages
+      if (newProducts.products.length < limit.value) {
+        hasMoreProducts.value = false
+      }
     } else {
       hasMoreProducts.value = false
     }
-    
-    // If less products than limit received, assume no more pages
-    if (newProducts.length < limit.value) {
-      hasMoreProducts.value = false
-    }
-
   } catch (error) {
     console.error(`Failed to load products for page ${page.value}:`, error);
     hasMoreProducts.value = false // Stop trying on error

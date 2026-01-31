@@ -22,35 +22,32 @@ export default defineEventHandler(async (event) => {
     const bidsCollection = db.collection('bids')
 
     const leaderboard = await bidsCollection
-      .aggregate(
-        [
-          { $match: { productId: new ObjectId(productId) } },
-          {
-            $group: {
-              _id: '$userEmail',
-              highestBid: { $max: '$amount' },
-              lastBidAt: { $max: '$createdAt' },
-              bidsCount: { $sum: 1 }
-            }
-          },
-          {
-            $project: {
-              _id: 0,
-              userEmail: '$_id',
-              highestBid: 1,
-              lastBidAt: 1,
-              bidsCount: 1
-            }
-          },
-          { $sort: { highestBid: -1, lastBidAt: 1 } },
-          { $skip: skip },
-          { $limit: limit }
-        ],
-        { allowDiskUse: true }
-      )
-      .toArray()
-
-    return leaderboard
+      .aggregate([
+        { $match: { productId: new ObjectId(productId) } },
+        {
+          $group: {
+            _id: '$userEmail',
+            highestBid: { $max: '$amount' },
+            lastBidAt: { $max: '$createdAt' },
+            bidsCount: { $sum: 1 }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            userEmail: '$_id',
+            highestBid: 1,
+            lastBidAt: 1,
+            bidsCount: 1
+          }
+        },
+        { $sort: { highestBid: -1, lastBidAt: 1 } },
+        { $skip: skip },
+        { $limit: limit }
+      ], { allowDiskUse: true })
+      .toArray();
+    // Gợi ý: Đảm bảo đã tạo index cho { productId, amount }, { productId, createdAt }
+    return leaderboard;
   } catch (error) {
     console.error(`Error building leaderboard for product ${productId}:`, error)
     throw createError({

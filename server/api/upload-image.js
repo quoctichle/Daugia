@@ -8,6 +8,7 @@ export default defineEventHandler(async (event) => {
     
     const image = multipart?.find(el => el.name === 'image');
 
+
     if (!image || !image.data || !image.filename) {
       throw createError({
         statusCode: 400,
@@ -15,8 +16,28 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // Kiểm tra kích thước file (tối đa 5MB)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (image.data.length > MAX_SIZE) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Ảnh vượt quá dung lượng tối đa 5MB.'
+      });
+    }
+
+    // Chỉ cho phép định dạng ảnh phổ biến
+    const allowedExt = ['.jpg', '.jpeg', '.png', '.webp'];
+    const fileExtension = extname(image.filename).toLowerCase();
+    if (!allowedExt.includes(fileExtension)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Chỉ cho phép upload ảnh jpg, jpeg, png, webp.'
+      });
+    }
+
+    // Gợi ý: Có thể nén ảnh trước khi lưu để tối ưu dung lượng (dùng sharp hoặc jimp nếu cần)
+
     // Generate unique filename
-    const fileExtension = extname(image.filename);
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
     const filename = `${uniqueSuffix}${fileExtension}`;
     

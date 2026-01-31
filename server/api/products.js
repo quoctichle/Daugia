@@ -9,23 +9,15 @@ export default defineEventHandler(async (event) => {
     const limit = parseInt(query.limit) || 10
     const skip = (page - 1) * limit
 
-    const projection = {
-      _id: 1,
-      name: 1,
-      description: 1,
-      startPrice: 1,
-      image: 1,
-      startTime: 1,
-      auctionDuration: 1
-    }
-
-    const products = await db.collection('products')
-      .find({}, { projection })
-      .skip(skip)
-      .limit(limit)
-      .toArray()
-      
-    return products
+    const [products, total] = await Promise.all([
+      db.collection('products')
+        .find({})
+        .skip(skip)
+        .limit(limit)
+        .toArray(),
+      db.collection('products').countDocuments()
+    ])
+    return { products, total }
   } catch (error) {
     console.error('❌ GET /api/products error:', error.message)
     // In Nuxt 3, it's recommended to throw errors to let the framework handle them.

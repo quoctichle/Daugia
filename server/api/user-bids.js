@@ -16,22 +16,18 @@ export default defineEventHandler(async (event) => {
     const db = client.db(process.env.MONGODB_DB || 'daugia')
     const bidsCollection = db.collection('bids')
 
-    // Chỉ lấy những trường cần thiết và sắp xếp để giảm payload + dễ xử lý
+    // Thêm phân trang, chỉ trả về trường cần thiết
+    const query = getQuery(event)
+    const limit = Math.min(parseInt(query.limit) || 50, 200)
+    const skip = Math.max(parseInt(query.skip) || 0, 0)
     const userBids = await bidsCollection
-      .find(
-        { userEmail },
-        {
-          projection: {
-            _id: 1,
-            productId: 1,
-            amount: 1,
-            bidNumber: 1,
-            createdAt: 1
-          }
-        }
-      )
+      .find({ userEmail })
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .toArray()
+
+    // Gợi ý: Đảm bảo đã tạo index cho { userEmail, createdAt }
 
     // Group by productId
     const bidsByProduct = {}
