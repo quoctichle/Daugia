@@ -64,8 +64,13 @@ export default defineEventHandler(async (event) => {
     // 3. Check participation limit
     const maxParticipations = product.maxParticipations || 1
     const existingBidsCount = await bidsCollection.countDocuments({ productId, userEmail })
-    
-    if (existingBidsCount + bids.length > maxParticipations) {
+
+    // Lấy bid cao nhất hiện tại cho sản phẩm này
+    const highestBid = await bidsCollection.find({ productId }).sort({ amount: -1, createdAt: 1 }).limit(1).toArray()
+    const highestBidder = highestBid[0]?.userEmail
+
+    // Nếu user là người cao nhất thì vẫn giữ giới hạn, còn không thì cho phép tiếp tục dự đoán
+    if (userEmail === highestBidder && (existingBidsCount + bids.length > maxParticipations)) {
       throw createError({
         statusCode: 400,
         statusMessage: `Bạn chỉ có thể dự đoán tối đa ${maxParticipations} lần. Bạn đã dự đoán ${existingBidsCount} lần.`

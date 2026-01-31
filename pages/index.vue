@@ -50,6 +50,7 @@ const email = ref('')
 const handleLogin = () => {
   if (email.value) {
     const userEmail = useState('userEmail', () => email.value)
+    if (process.client) localStorage.setItem('userEmail', email.value)
     userEmail.value = email.value
     navigateTo('/user')
   }

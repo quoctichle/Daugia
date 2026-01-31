@@ -55,43 +55,35 @@
           </div>
         </div>
 
-        <!-- Form đấu giá hoặc thông tin bids -->
-        <div v-if="userBids && userBids.length > 0" class="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg overflow-hidden">
-          <div class="p-8">
-            <h3 class="text-2xl font-bold text-yellow-400 mb-6">Giá bạn đã dự đoán</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div v-for="bid in userBids" :key="bid._id" class="bg-teal-900/50 border border-teal-400 rounded-lg p-4">
-                <p class="text-teal-300 font-semibold">Lần {{ bid.bidNumber }}</p>
-                <p class="text-2xl font-bold text-white">{{ formatCurrency(bid.amount) }}</p>
+          <!-- Phần đấu giá -->
+          <div v-if="auctionStatus === 'Đang đấu giá'" class="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg overflow-hidden">
+            <div class="p-8">
+              <h3 class="text-2xl font-bold text-yellow-400 mb-6">Đấu giá ngay!</h3>
+              <p class="text-lg text-gray-300 mb-4">Giá cao nhất hiện tại: <span class="font-bold text-white">{{ formatCurrency(currentHighestBid) }}</span></p>
+              <p class="text-lg text-gray-300 mb-6">Giá đấu tiếp theo: <span class="font-bold text-green-400">{{ formatCurrency(nextBidAmount) }}</span></p>
+
+              <button type="button" @click="submitBid" :disabled="isBidding || isCurrentUserHighest || auctionStatus !== 'Đang đấu giá'"
+                      class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-4 rounded-xl text-lg shadow-lg hover:shadow-teal-500/30 transform hover:-translate-y-1 transition-all duration-300 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:shadow-none">
+                {{ isBidding ? 'ĐANG GỬI...' : isCurrentUserHighest ? 'BẠN ĐANG DẪN ĐẦU' : 'ĐẤU GIÁ SẢN PHẨM' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Trạng thái khi chưa bắt đầu hoặc đã kết thúc -->
+          <div v-else class="text-center p-8 bg-black/20 backdrop-blur-md rounded-2xl shadow-lg border border-white/10">
+            <p class="text-gray-400 text-lg">
+              {{ auctionStatus === 'Chưa bắt đầu' ? 'Phiên đấu giá chưa bắt đầu.' : 'Phiên đấu giá đã kết thúc.' }}
+            </p>
+            <div v-if="userBids && userBids.length > 0" class="mt-8">
+              <h4 class="text-xl font-bold text-yellow-400 mb-4">Giá bạn đã dự đoán</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div v-for="bid in userBids" :key="bid._id" class="bg-teal-900/50 border border-teal-400 rounded-lg p-4">
+                  <p class="text-teal-300 font-semibold">Lần {{ bid.bidNumber }}</p>
+                  <p class="text-2xl font-bold text-white">{{ formatCurrency(bid.amount) }}</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-
-        <div v-else-if="auctionStatus === 'Đang đấu giá'" class="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg overflow-hidden">
-          <div class="p-8">
-            <h3 class="text-2xl font-bold text-yellow-400 mb-6">Nhập giá dự đoán</h3>
-            <form @submit.prevent="submitBids" class="space-y-6">
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div v-for="i in maxParticipations" :key="i">
-                  <label :for="`bid-${i}`" class="block text-sm font-medium text-gray-400 mb-2">Dự đoán lần {{ i }}</label>
-                  <input :id="`bid-${i}`" v-model="bids[i-1]" type="number" :placeholder="`Nhập giá tiền`" step="1000" required
-                         class="w-full px-4 py-3 bg-gray-800/60 border-2 border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition duration-300" />
-                </div>
-              </div>
-              <button type="submit" :disabled="isSubmitting"
-                      class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-4 rounded-xl text-lg shadow-lg hover:shadow-teal-500/30 transform hover:-translate-y-1 transition-all duration-300 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:shadow-none">
-                {{ isSubmitting ? 'ĐANG GỬI...' : 'GỬI DỮ ĐOÁN' }}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        <div v-else class="text-center p-8 bg-black/20 backdrop-blur-md rounded-2xl shadow-lg border border-white/10">
-          <p class="text-gray-400 text-lg">
-            {{ auctionStatus === 'Chưa bắt đầu' ? 'Phiên đấu giá chưa bắt đầu.' : 'Phiên đấu giá đã kết thúc.' }}
-          </p>
-        </div>
         </div>
 
         <!-- Cột phải: Leaderboard -->
@@ -159,13 +151,14 @@ const bids = ref([])
 const countdown = ref('Đang tải...')
 const countdownPercent = ref(100)
 const userBids = ref([])
-const isSubmitting = ref(false)
+const isSubmitting = ref(false) // For general form submission
+const isBidding = ref(false) // For bid button specific state
 const leaderboard = ref([])
 const isLoadingLeaderboard = ref(false)
 let countdownInterval
 let leaderboardInterval
 
-const userEmail = computed(() => useState('userEmail').value || 'Guest')
+const userEmail = computed(() => (process.client ? localStorage.getItem('userEmail') : useState('userEmail').value) || 'Guest')
 
 onMounted(async () => {
   await loadData()
@@ -200,7 +193,14 @@ const loadData = async () => {
 const loadUserBids = async () => {
   try {
     const email = useState('userEmail').value
-    if (!email) return
+    if (!email) {
+    const storedEmail = process.client ? localStorage.getItem('userEmail') : null;
+    if (storedEmail) {
+      email = storedEmail;
+    } else {
+      return;
+    }
+  }
     const allUserBids = await $fetch('/api/user-bids', { query: { userEmail: email } })
     userBids.value = allUserBids[productId] || []
   } catch (error) {
@@ -244,10 +244,7 @@ const startLeaderboardPolling = () => {
 }
 
 const initializeBids = () => {
-  if (userBids.value.length === 0) {
-    const maxParticipations = product.value.maxParticipations || 3
-    bids.value = Array(maxParticipations).fill('')
-  }
+  // No longer needed as we're not inputting multiple bids
 }
 
 const startCountdown = () => {
@@ -295,50 +292,19 @@ const auctionStatus = computed(() => {
 
 const maxParticipations = computed(() => product.value?.maxParticipations || 3)
 
-const submitBids = async () => {
-  if (isSubmitting.value || auctionStatus.value !== 'Đang đấu giá') return
-
-  isSubmitting.value = true
-
-  try {
-    const userEmailValue = useState('userEmail').value
-    const bidsData = []
-
-    bids.value.forEach((bidValue, index) => {
-      if (bidValue) {
-        const bidAmount = parseInt(bidValue)
-        if (bidAmount < product.value.startPrice) {
-          alert(`Giá dự đoán lần ${index + 1} (${formatCurrency(bidAmount)}) phải lớn hơn hoặc bằng giá khởi điểm ${formatCurrency(product.value.startPrice)}.`)
-          return
-        }
-        bidsData.push({
-          productId: product.value._id,
-          userEmail: userEmailValue,
-          amount: bidAmount,
-          bidNumber: index + 1
-        })
-      }
-    })
-
-    if (bidsData.length === 0) {
-      alert('Bạn chưa nhập giá dự đoán nào.')
-      return
-    }
-
-    await $fetch('/api/submit-bids', {
-      method: 'POST',
-      body: { bids: bidsData }
-    })
-
-    alert('Dự đoán của bạn đã được gửi thành công!')
-    await Promise.all([loadUserBids(), loadLeaderboard()])
-    bids.value = []
-  } catch (error) {
-    alert('Lỗi khi gửi dự đoán: ' + (error.data?.message || error.message))
-  } finally {
-    isSubmitting.value = false
+const currentHighestBid = computed(() => {
+  if (leaderboard.value.length > 0) {
+    return leaderboard.value[0].highestBid
   }
-}
+  return product.value?.startPrice || 0
+})
+
+const nextBidAmount = computed(() => currentHighestBid.value + 100)
+
+const isCurrentUserHighest = computed(() => {
+  return leaderboard.value.length > 0 && leaderboard.value[0].userEmail === userEmail.value
+})
+
 
 const maskEmail = (email) => {
   if (!email || typeof email !== 'string') return ''
@@ -357,8 +323,8 @@ const maskEmail = (email) => {
 }
 
 const formatCurrency = (value) => {
-  if (!value && value !== 0) return '0 VND'
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
+  if (!value && value !== 0) return '0 ¥'
+  return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(value)
 }
 
 const goBack = () => {

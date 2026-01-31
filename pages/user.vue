@@ -83,7 +83,7 @@ const limit = ref(6) // 3 columns, 2 rows
 const hasMoreProducts = ref(true)
 let countdownInterval
 
-const userEmail = computed(() => useState('userEmail').value || 'Guest')
+const userEmail = computed(() => (process.client ? localStorage.getItem('userEmail') : useState('userEmail').value) || 'Guest')
 
 onMounted(async () => {
   await loadInitialData()
@@ -157,12 +157,13 @@ const goToAuction = (productId) => {
 }
 
 const formatCurrency = (value) => {
-  if (!value && value !== 0) return '0 VND';
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+  if (!value && value !== 0) return '0 ¥';
+  return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(value);
 }
 
 const logout = () => {
-  useState('userEmail').value = null;
+  if (process.client) localStorage.removeItem('userEmail')
+  useState('userEmail').value = null
   navigateTo('/')
 }
 
