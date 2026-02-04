@@ -3,6 +3,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-01-01',
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss', '@nuxt/image'],
+  vite: {
+    server: {
+      allowedHosts: ['sb-6aewko7yqi2x.vercel.run']
+    }
+  },
   nitro: {
     host: 'localhost',
     port: 3000
